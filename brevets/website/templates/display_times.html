@@ -17,9 +17,10 @@
       <link rel="stylesheet" href="../static/display_times.css">
    </head>
    <body>
-      <div class="container">
-         <h1>Lindsay's Times Displayer</h1>
-         <p>You can display all the opening and closing times, or just opening or just closing. Yay.</p>
+        <div class="container">
+            <h1>Lindsay's Times Displayer</h1>
+            <p>You can display all the opening and closing times, or just opening or just closing. Yay.</p>
+            
         <form class="preferences">
             <div class="time_selection">
                 <h3>Select the times you want</h3>
@@ -54,7 +55,7 @@
         <div class="display_times">
             <h3>Results:</h3>
             <code id="display_here"></code>
-        </div>
+        </div> <!-- container -->
          
          <script type="text/javascript">
             var SCRIPT_ROOT = {{ request.script_root|tojson|safe }} ;

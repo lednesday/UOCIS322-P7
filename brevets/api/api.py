@@ -39,14 +39,15 @@ class ReturnToken(Resource):
         username = request.args.get('username', type=str)
         password = request.args.get('password', type=str)
         if userDb.verify_user(username, password):
-            return jsonify(self.generate_auth_token(username))
-        return jsonify({"status": "unauthorized"}), 401
+            return {"status": "response", "token": self.generate_auth_token(username)}
+        return {"response": "unauthorized"}, 401
 
     def generate_auth_token(self, username, expiration=600):
         # s = Serializer(app.config['SECRET_KEY'], expires_in=expiration)
         s = Serializer(SECRET_KEY, expires_in=VALID_SECONDS)
         # pass index of user
-        return s.dumps({'username': username})
+        # convert to string because tokens are type bytes, which is not JSON
+        return str(s.dumps({'username': username}))
 
 
 """  brevet functions  """
@@ -66,6 +67,8 @@ def verify_auth_token(token):
 class ListAll(Resource):
     def get(self, dtype="json"):
         token = request.args.get("token", "", type=str)
+        if len(token) == 0:
+            return {"response": "empty token"}, 401
         if verify_auth_token(token) == "Success":
             data_list = list(brevDb.find_content(
                 projection={"open_time": 1, "close_time": 1, "_id": 0}))
@@ -86,7 +89,7 @@ class ListAll(Resource):
             else:
                 return "something went wrong with the API"
         else:
-            return jsonify({"status": "unauthorized"}), 401
+            return {"response": "unauthorized"}, 401
 
 
 class ListOpenOnly(Resource):
@@ -112,7 +115,7 @@ class ListOpenOnly(Resource):
             else:
                 return "something went wrong with the API"
         else:
-            return jsonify({"status": "unauthorized"}), 401
+            return {"status": "unauthorized"}, 401
 
 
 class ListCloseOnly(Resource):
@@ -138,7 +141,7 @@ class ListCloseOnly(Resource):
             else:
                 return "something went wrong with the API"
         else:
-            return jsonify({"status": "unauthorized"}), 401
+            return {"status": "unauthorized"}, 401
 
 
 # Create routes

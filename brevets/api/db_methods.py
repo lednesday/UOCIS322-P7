@@ -46,23 +46,26 @@ class UserDb:
         return True
 
     def verify_user(self, username, password):
+        # current_app.logger.debug("username: " + username)
         if not self.is_in_collection("username", username):
             return False
-        user_data = db.usercoll.find({"username": username})
+        # current_app.logger.debug("made it past false return")
+        user_data = self.db.usercoll.find_one({"username": username})
         stored_hash = user_data["password"]
         return self.verify_password(password, stored_hash)
 
     def is_in_collection(self, key, value):
         already_exists = False
         val_list = list(self.db.usercoll.find({key: value}))
+        # current_app.logger.debug("val_list:" + str(val_list))
         if len(val_list) != 0:
             already_exists = True
         return already_exists
 
     def hash_password(self, password):
         # is probably sha256
-        # current_app.logger.debug("password:", password)
         return pwd_context.encrypt(password)
 
     def verify_password(self, password, hashVal):
+
         return pwd_context.verify(password, hashVal)

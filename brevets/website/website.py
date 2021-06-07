@@ -10,22 +10,22 @@ from wtforms import BooleanField, StringField, validators
 
 app = Flask(__name__)
 
-# app.secret_key = "K@w@ zhn@ ng!-zh@bw!"
+app.secret_key = "K@w@ zhn@ ng!-zh@bw!"
 
-# app.config.from_object(__name__)  # what is this?
+app.config.from_object(__name__)  # what is this?
 
-# login_manager = LoginManager()
+login_manager = LoginManager()
 
-# login_manager.session_protection = "strong"
+login_manager.session_protection = "strong"
 
-# login_manager.login_view = "login"
-# login_manager.login_message = u"Please log in to access this page."
+login_manager.login_view = "login"
+login_manager.login_message = u"Please log in to access this page."
 
-# login_manager.refresh_view = "login"
-# login_manager.needs_refresh_message = (
-#     u"To protect your account, please reauthenticate to access this page."
-# )
-# login_manager.needs_refresh_message_category = "info"
+login_manager.refresh_view = "login"
+login_manager.needs_refresh_message = (
+    u"To protect your account, please reauthenticate to access this page."
+)
+login_manager.needs_refresh_message_category = "info"
 
 """
 Copied from flaskLogin.py model
@@ -81,14 +81,14 @@ class User(UserMixin):
         pass
 
 
-# @login_manager.user_loader
-# def load_user(user_id):
-#     # TODO: what to do here?
-#     return
-#     # return USERS[int(user_id)]
+@login_manager.user_loader
+def load_user(user_id):
+    # TODO: what to do here?
+    return
+    # return USERS[int(user_id)]
 
 
-# login_manager.init_app(app)
+login_manager.init_app(app)
 
 
 @app.route('/')
@@ -97,7 +97,37 @@ def home():
     return render_template('display_times.html')
 
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit() and request.method == "POST" and "username" in request.form:
+        username = request.form["username"]
+        if username in USER_NAMES:
+            remember = request.form.get("remember", "false") == "true"
+            if login_user(USER_NAMES[username], remember=remember):
+                flash("Logged in!")
+                flash("I'll remember you") if remember else None
+                next = request.args.get("next")
+                if not is_safe_url(next):
+                    abort(400)
+                return redirect(next or url_for('index'))
+            else:
+                flash("Sorry, but you could not log in.")
+        else:
+            flash(u"Invalid username.")
+    return render_template("login.html", form=form)
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash("Logged out.")
+    return redirect(url_for("index"))
+
+
 @app.route('/listeverything')
+@login_required
 def listeverything():
     json_or_csv = request.args.get('format', "json", type=str)
     num_lines = request.args.get('lines', -1, type=int)
@@ -107,6 +137,7 @@ def listeverything():
 
 
 @app.route('/listopen')
+@login_required
 def listopen():
     json_or_csv = request.args.get('format', "json", type=str)
     num_lines = request.args.get('lines', -1, type=int)
@@ -116,6 +147,7 @@ def listopen():
 
 
 @app.route('/listclose')
+@login_required
 def listclose():
     json_or_csv = request.args.get('format', "json", type=str)
     num_lines = request.args.get('lines', -1, type=int)
