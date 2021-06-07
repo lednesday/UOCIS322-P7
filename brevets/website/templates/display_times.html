@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+   <head>
+      <title>Times Displayer</title>
+      <meta charset="utf-8">
+      <!-- Javascript:  JQuery from a content distribution network (CDN) -->
+      <script
+         src="https://code.jquery.com/jquery-3.5.1.min.js"
+         integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+         crossorigin="anonymous"></script>
+      <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+         integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+         crossorigin="anonymous"></script>
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js"
+         integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF"
+         crossorigin="anonymous"></script>
+      <link rel="stylesheet" href="../static/display_times.css">
+   </head>
+   <body>
+      <div class="container">
+         <h1>Lindsay's Times Displayer</h1>
+         <p>You can display all the opening and closing times, or just opening or just closing. Yay.</p>
+        <form class="preferences">
+            <div class="time_selection">
+                <h3>Select the times you want</h3>
+                <input type="radio" id="all" name="times" value="all" checked="checked">
+                <label for="all">Both opening and closing times</label><br>
+                <input type="radio" id="opening" name="times" value="opening">
+                <label for="opening">Only opening times</label><br>
+                <input type="radio" id="closing" name="times" value="closing">
+                <label for="closing">Only closing times</label>
+            </div>
+            <div class="format_selection">
+                <h3>Select the format</h3>
+                <input type="radio" id="json" name="format" value="json" checked="checked">
+                <label for="json">JSON format</label><br>
+                <input type="radio" id="csv" name="format" value="csv">
+                <label for="csv">CSV format</label><br>
+            </div>
+            <div class="num_selection">
+                <h3>Enter the number of controles</h3>
+                <input name="lines" type="number" step="1"
+                           min="0" max="1200" value="1"/>
+                <p>If you enter more than the total available, all lines will be shown.</p>
+                <div class="all">
+                    <p>Or check the box to receive all controles:</p>
+                    <input type="checkbox" id="all" name="all" unchecked>
+                    <label for="all">All controles</label>
+                </div>
+            </div>
+            <p class="blankline"></p>
+            <button id="submit">Submit</button>
+        </form>
+        <div class="display_times">
+            <h3>Results:</h3>
+            <code id="display_here"></code>
+        </div>
+         
+         <script type="text/javascript">
+            var SCRIPT_ROOT = {{ request.script_root|tojson|safe }} ;
+            var BOTH_URL = SCRIPT_ROOT + "/listeverything";
+            var OPEN_URL = SCRIPT_ROOT + "/listopen";
+            var CLOSE_URL = SCRIPT_ROOT + "/listclose";
+
+            $(document).ready(function(){
+                // handler for submit button
+                $('#submit').click(
+                    function(e){
+                        e.preventDefault();
+                        var timesValue = $("input[name='times']:checked").val();
+                        var formatValue = $("input[name='format']:checked").val();
+                        var numLines = $("input[name='lines']").val();
+                        if($("input[name='all']").is(":checked")){
+                            numLines = -1; // symbol for "all"
+                        }
+                        var url_str = "";
+                        if(timesValue == "opening"){url_str = OPEN_URL;}
+                        else if(timesValue == "closing"){url_str = CLOSE_URL;}
+                        else{url_str = BOTH_URL;}
+                        $.get(url_str, {"format": formatValue, "lines":numLines}, function(api_data){
+                            $("#display_here").html(api_data);
+                        });
+                    });
+                $('input[name="all"]').change(
+                    function(e){
+                        if($(this).is(":checked")){
+                            $('input[name="lines"]').hide();
+                        }
+                        else{
+                            $('input[name="lines"]').show();
+                        }
+                    });
+                });
+         </script>
+      </div>
+   </body>
+</html>

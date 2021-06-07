@@ -1,0 +1,43 @@
+/*
+    color palette:
+    $pastel pink: #F0A7A0;
+    $light blue: #9AC2C9;
+    $razzmic berry: #9B5094;
+    $eerie black: #222222;
+    $sunglow: #FFCB47;
+ */
+
+ /* global settings ------------------------- */
+
+ /* boiler-plate box-sizing fix */
+ html {
+    box-sizing: border-box;
+  }
+  *, *:before, *:after {
+    box-sizing: inherit;
+  }
+
+
+
+/* body section ----------------------------------- */
+
+body {
+    font-family: "Avant Garde", Avantgarde, CenturyGothic, sans-serif;
+    background-color: #F0A7A0;
+    color: 222222
+    padding-left: 10%; 
+    padding-right: 2%;
+}
+
+h1 {
+    color: #9B5094;
+}
+
+.preferences {
+    background-color: #FFCB47;
+}
+
+.display_times {
+    background-color: #9AC2C9;
+}
+
