@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, abort, jsonify
+import flask
 import requests  # not sure what for
 from urllib.parse import urlparse, urljoin
 from flask_login import (LoginManager, current_user, login_required,
@@ -98,7 +99,7 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    if username not in flask.session or token not in flask.session:
+    if "username" not in flask.session or "token" not in flask.session:
         return None
     username = flask.session["username"]
     token = flask.session["token"]
@@ -113,7 +114,7 @@ login_manager.init_app(app)
 def home():
     return render_template('display_times.html')
 
-
+# TODO: add is_authenticated to this function
 @app.route("/login", methods=["GET", "POST"])
 def login():
     form = LoginForm()
@@ -157,20 +158,22 @@ def register():
         password = request.form["password"]
         hashed_password = hash_password(password)
         post_data = {"username": username, "password": hashed_password}
-        result = requests.post('http://restapi:5000/register', data=post_data)
+        result = requests.post(
+            'http://restapi:5000/register', data=post_data).json()
         print("result:", result)
         if result["response"] == "success":  # user was successfully registered
             login_result = requests.get(
                 f'http://restapi:5000/token/?username={username}&password={hashed_password}').json()
             token = login_result["token"]
             user_id = login_result["id"]
-            login_user(User(user_id, username, token))
+            this_user = User(user_id, username, token)
+            login_user(this_user)
             flash("Logged in!")
             # set sesssions here
             next = request.args.get("next")
             if not is_safe_url(next):
                 abort(400)
-            return redirect(next or url_for('index'))
+            return redirect(next or url_for('home'))
         else:
             flash(u"Sorry, unable to log in.")
     return render_template("register.html", form=form)

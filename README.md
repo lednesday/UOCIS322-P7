@@ -50,7 +50,6 @@ The app would be better with a few improvements:
 * Currently if a user changes the start time or brevet distance, already-existing controle opening and closing times do not change. The app will be better if there are event handlers for changes in these values that trigger an update to the opening and closing times for all existing controle distances that a user has entered.
 * Error response is very limited at this point. Input error checking (for permissable types and values) should be added to flask_brevets.py (specifically the _calc_times function) such that the results include a boolean indicator of success or failure, and if the method failed, a message indicating the reason. calc.html should be modified to display such error messages.
 * Currently the database only stores the controle information, but not the brevet distance or the start time of the event. These should also be stored.
-* api.py needs refactoring.
 
 
 ### Background on Brevets and Randonneuring
