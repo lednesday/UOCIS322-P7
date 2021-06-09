@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, jsonify
 import requests  # not sure what for
 from urllib.parse import urlparse, urljoin
 from flask_login import (LoginManager, current_user, login_required,
@@ -6,6 +6,7 @@ from flask_login import (LoginManager, current_user, login_required,
                          confirm_login, fresh_login_required)  # TODO: why parens?
 from flask_wtf import FlaskForm as Form
 from wtforms import BooleanField, StringField, validators
+from passlib.hash import sha256_crypt  # Ali recommended
 
 
 app = Flask(__name__)
@@ -38,8 +39,22 @@ class LoginForm(Form):
         validators.Length(min=2, max=25,
                           message=u"Huh, little too short for a username."),
         validators.InputRequired(u"Forget something?")])
-    # password = ???
+    password = StringField("Password",
+                           [validators.Length(min=6, max=25,
+                                              message=u"Password must have at least 6 characters"),
+                            validators.InputRequired(u"Password required")])
     remember = BooleanField('Remember me')
+
+
+class RegisterForm(Form):
+    username = StringField('Username', [
+        validators.Length(min=2, max=25,
+                          message=u"Huh, little too short for a username."),
+        validators.InputRequired(u"Forget something?")])
+    password = StringField("Password",
+                           [validators.Length(min=6, max=25,
+                                              message=u"Password must have at least 6 characters"),
+                            validators.InputRequired(u"Password required")])
 
 
 """
@@ -57,35 +72,37 @@ def is_safe_url(target):
     test_url = urlparse(urljoin(request.host_url, target))
     return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
 
+# TODO: make sure this is right
+# see https://passlib.readthedocs.io/en/stable/lib/passlib.hash.sha256_crypt.html for documentation
+
+
+def hash_password(password):
+    # is probably sha256
+    return sha256_crypt.using(salt="z1wtag3n").hash(password)
+
 
 """
 Copied from flaskLogin.py model
 Uses flask_login
 """
 
+# TODO: what is this class used for? Sessions?
+
 
 class User(UserMixin):
-    def __init__(self, id, username, hashed_password):
-        # TODO: where does id come from? what's it for?
+    def __init__(self, id, username, token):
         self.id = id
         self.username = username
-        self.hashed_password = ""
-        self.token = ""
-
-    def set_username(self, username):
-        self.username = username
-        return self
-
-    def set_hashed_password(self, hashed_password):
-        # TODO: hashed_password? token?
-        pass
+        self.token = token
 
 
 @login_manager.user_loader
 def load_user(user_id):
-    # TODO: what to do here?
-    return
-    # return USERS[int(user_id)]
+    if username not in flask.session or token not in flask.session:
+        return None
+    username = flask.session["username"]
+    token = flask.session["token"]
+    return User(user_id, username, token)
 
 
 login_manager.init_app(app)
@@ -100,21 +117,27 @@ def home():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     form = LoginForm()
-    if form.validate_on_submit() and request.method == "POST" and "username" in request.form:
+    if form.validate_on_submit() and request.method == "POST" and "username" in request.form and "password" in request.form:
         username = request.form["username"]
-        if username in USER_NAMES:
+        password = request.form["password"]
+        hashed_password = hash_password(password)
+        result = requests.get(
+            f'http://restapi:5000/token?username={username}&password={hashed_password}').json()
+        token = result["token"]
+        user_id = result["id"]
+        if result["response"] == "success":  # token was successfully returned
             remember = request.form.get("remember", "false") == "true"
-            if login_user(USER_NAMES[username], remember=remember):
-                flash("Logged in!")
-                flash("I'll remember you") if remember else None
-                next = request.args.get("next")
-                if not is_safe_url(next):
-                    abort(400)
-                return redirect(next or url_for('index'))
-            else:
-                flash("Sorry, but you could not log in.")
+            login_user(User(user_id, username, token), remember=remember)
+            flash("Logged in!")
+            # set sesssions here
+            flash("I'll remember you") if remember else None
+            next = request.args.get("next")
+            if not is_safe_url(next):
+                abort(400)
+            # TODO: don't I need to return the token?
+            return redirect(next or url_for('index'))
         else:
-            flash(u"Invalid username.")
+            flash(u"Sorry, unable to log in.")
     return render_template("login.html", form=form)
 
 
@@ -126,33 +149,65 @@ def logout():
     return redirect(url_for("index"))
 
 
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    form = RegisterForm()
+    if form.validate_on_submit() and request.method == "POST" and "username" in request.form and "password" in request.form:
+        username = request.form["username"]
+        password = request.form["password"]
+        hashed_password = hash_password(password)
+        post_data = {"username": username, "password": hashed_password}
+        result = requests.post('http://restapi:5000/register', data=post_data)
+        print("result:", result)
+        if result["response"] == "success":  # user was successfully registered
+            login_result = requests.get(
+                f'http://restapi:5000/token/?username={username}&password={hashed_password}').json()
+            token = login_result["token"]
+            user_id = login_result["id"]
+            login_user(User(user_id, username, token))
+            flash("Logged in!")
+            # set sesssions here
+            next = request.args.get("next")
+            if not is_safe_url(next):
+                abort(400)
+            return redirect(next or url_for('index'))
+        else:
+            flash(u"Sorry, unable to log in.")
+    return render_template("register.html", form=form)
+
+# TODO: next 3 routes need to know the token
+
+
 @app.route('/listeverything')
 @login_required
 def listeverything():
+    token = flask.session["token"]
     json_or_csv = request.args.get('format', "json", type=str)
     num_lines = request.args.get('lines', -1, type=int)
     r = requests.get(
-        f'http://restapi:5000/listAll/{json_or_csv}?top={num_lines}')
+        f'http://restapi:5000/listAll/{json_or_csv}?top={num_lines}&token={token}')
     return r.text
 
 
 @app.route('/listopen')
 @login_required
 def listopen():
+    token = flask.session["token"]
     json_or_csv = request.args.get('format', "json", type=str)
     num_lines = request.args.get('lines', -1, type=int)
     r = requests.get(
-        f'http://restapi:5000/listOpenOnly/{json_or_csv}?top={num_lines}')
+        f'http://restapi:5000/listOpenOnly/{json_or_csv}?top={num_lines}&token={token}')
     return r.text
 
 
 @app.route('/listclose')
 @login_required
 def listclose():
+    token = flask.session["token"]
     json_or_csv = request.args.get('format', "json", type=str)
     num_lines = request.args.get('lines', -1, type=int)
     r = requests.get(
-        f'http://restapi:5000/listCloseOnly/{json_or_csv}?top={num_lines}')
+        f'http://restapi:5000/listCloseOnly/{json_or_csv}?top={num_lines}&token={token}')
     return r.text
 
 

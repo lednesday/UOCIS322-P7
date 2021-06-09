@@ -4,7 +4,7 @@ Various methods for MongoDB
 import os
 from pymongo import MongoClient
 from passlib.hash import sha256_crypt as pwd_context  # Ali recommended
-from passlib.apps import custom_app_context as pwd_context  # was in the model
+# from passlib.apps import custom_app_context as pwd_context  # was in the model
 from flask import current_app  # for logging
 
 
@@ -52,7 +52,9 @@ class UserDb:
         # current_app.logger.debug("made it past false return")
         user_data = self.db.usercoll.find_one({"username": username})
         stored_hash = user_data["password"]
-        return self.verify_password(password, stored_hash)
+        if self.verify_password(password, stored_hash):
+            return user_data["_id"]
+        return False
 
     def is_in_collection(self, key, value):
         already_exists = False
@@ -64,8 +66,8 @@ class UserDb:
 
     def hash_password(self, password):
         # is probably sha256
+        print("password:", password)
         return pwd_context.encrypt(password)
 
     def verify_password(self, password, hashVal):
-
         return pwd_context.verify(password, hashVal)

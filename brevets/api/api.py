@@ -29,17 +29,18 @@ class RegisterUser(Resource):
         password = request.form.get('password', type=str)
         if userDb.insert_user(username, password):
             # TODO: should error codes be jsonified or defined or something?
-            return {"status": "success"}, 201
+            return {"response": "success"}, 201
         else:
-            return {"status": "bad request"}, 400
+            return {"response": "bad request"}, 400
 
 
 class ReturnToken(Resource):
     def get(self):
         username = request.args.get('username', type=str)
         password = request.args.get('password', type=str)
-        if userDb.verify_user(username, password):
-            return {"status": "response", "token": self.generate_auth_token(username)}
+        user_id = userDb.verify_user(username, password)
+        if user_id:
+            return {"response": "success", "token": self.generate_auth_token(username), "id": str(user_id)}
         return {"response": "unauthorized"}, 401
 
     def generate_auth_token(self, username, expiration=600):
@@ -149,8 +150,8 @@ class ListCloseOnly(Resource):
 api.add_resource(ListAll, '/listAll', '/listAll/<dtype>')
 api.add_resource(ListOpenOnly, '/listOpenOnly', '/listOpenOnly/<dtype>')
 api.add_resource(ListCloseOnly, '/listCloseOnly', '/listCloseOnly/<dtype>')
-api.add_resource(RegisterUser, '/register')
-api.add_resource(ReturnToken, '/token')
+api.add_resource(RegisterUser, '/register', '/register/')
+api.add_resource(ReturnToken, '/token', '/token/')
 
 # Run the application
 if __name__ == '__main__':

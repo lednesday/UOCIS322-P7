@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="logout">
+                <div class="row">
+                    <h1>Log Out</h1>
+                </div>
+                <div class="row">
+                    <form method="post" novalidate>
+                        {{ form.hidden_tag() }}
+                        <div class="col-4">
+                            <div class="input-group mb-4">
+                                <button class="btn btn-outline-primary" id="button-login">Logout</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div> <!-- logout-->
+
+{% endblock %}

@@ -33,6 +33,14 @@ h1 {
     color: #9B5094;
 }
 
+.container-fluid{
+    background-color: #FFCB47;
+}
+
+.navbar-brand {
+    background-color: #9AC2C9;
+}
+
 .preferences {
     background-color: #FFCB47;
 }
