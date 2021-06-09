@@ -40,7 +40,7 @@ class ReturnToken(Resource):
         password = request.args.get('password', type=str)
         user_id = userDb.verify_user(username, password)
         if user_id:
-            return {"response": "success", "token": self.generate_auth_token(username), "id": str(user_id)}
+            return {"response": "success", "token": self.generate_auth_token(username)[2:-1], "id": str(user_id)}
         return {"response": "unauthorized"}, 401
 
     def generate_auth_token(self, username, expiration=600):

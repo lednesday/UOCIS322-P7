@@ -46,6 +46,7 @@ To end the program, enter docker-compose down in your terminal.
 ## Needed improvements / bugs
 
 The app would be better with a few improvements:
+* If a user tries to display brevet times on the consumer website without logging in, they're directed to sign in at the bottom of the screen, but this signin doesn't actually work. The user must use the Sign in option in the top menu bar.
 * The time calculator does very little error checking.
 * Currently if a user changes the start time or brevet distance, already-existing controle opening and closing times do not change. The app will be better if there are event handlers for changes in these values that trigger an update to the opening and closing times for all existing controle distances that a user has entered.
 * Error response is very limited at this point. Input error checking (for permissable types and values) should be added to flask_brevets.py (specifically the _calc_times function) such that the results include a boolean indicator of success or failure, and if the method failed, a message indicating the reason. calc.html should be modified to display such error messages.

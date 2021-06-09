@@ -131,12 +131,15 @@ def login():
             login_user(User(user_id, username, token), remember=remember)
             flash("Logged in!")
             # set sesssions here
+            flask.session["username"] = username
+            flask.session["token"] = token
+            flask.session["user_id"] = user_id
             flash("I'll remember you") if remember else None
             next = request.args.get("next")
             if not is_safe_url(next):
                 abort(400)
             # TODO: don't I need to return the token?
-            return redirect(next or url_for('index'))
+            return redirect(next or url_for('home'))
         else:
             flash(u"Sorry, unable to log in.")
     return render_template("login.html", form=form)
@@ -147,7 +150,7 @@ def login():
 def logout():
     logout_user()
     flash("Logged out.")
-    return redirect(url_for("index"))
+    return redirect(url_for("home"))
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -169,6 +172,10 @@ def register():
             this_user = User(user_id, username, token)
             login_user(this_user)
             flash("Logged in!")
+            # set sesssions here
+            flask.session["username"] = username
+            flask.session["token"] = token
+            flask.session["user_id"] = user_id
             # set sesssions here
             next = request.args.get("next")
             if not is_safe_url(next):
