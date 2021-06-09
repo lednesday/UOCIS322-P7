@@ -3,7 +3,7 @@ Brevet time calculator with AJAX, MongoDB, a RESTful API, and a consumer website
 API stores user credentials and only returns brevet information if a valid token is sent.
 Consumer website manages login information.
 
-Author: Lindsay Marean
+Author: Lindsay Marean, linzanna@cs.uoregon.edu
 
 ## Overview
 
